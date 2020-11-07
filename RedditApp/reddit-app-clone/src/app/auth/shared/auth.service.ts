@@ -1,14 +1,12 @@
-import {
-  LoginResponsePayload,
-  LoginResponse,
-} from "./../login/login-response.payload";
+import { LoginResponse } from "./../login/login-response.payload";
 import { LoginRequestPayload } from "./../login/login-request.payload";
 import { SignupRequestPayload } from "./../signup/signup-request.payload";
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
-import { map } from "rxjs/operators";
+import { map, tap } from "rxjs/operators";
 import { LocalStorageService } from "ngx-webstorage";
+
 @Injectable({
   providedIn: "root",
 })
@@ -17,6 +15,16 @@ export class AuthService {
     private httpClient: HttpClient,
     private localStorage: LocalStorageService
   ) {}
+
+  refreshTokenPayload = {
+    refreshToken: this.getRefreshToken(),
+    username: this.getUserName(),
+  };
+
+  getJwtToken() {
+    // throw new Error("Method not implemented.");
+    return this.localStorage.retrieve("authenticationToken");
+  }
 
   signup(signupRequestPayload: SignupRequestPayload): Observable<any> {
     return this.httpClient.post(
@@ -45,5 +53,36 @@ export class AuthService {
           return true;
         })
       );
+  }
+
+  refreshToken() {
+    return this.httpClient
+      .post<LoginResponse>(
+        "http://localhost:8080/api/auth/refresh/token",
+        this.refreshTokenPayload
+      )
+      .pipe(
+        tap((response) => {
+          this.localStorage.clear("authenticationToken");
+          this.localStorage.clear("expiresAt");
+
+          this.localStorage.store(
+            "authenticationToken",
+            response.authenticationToken
+          );
+          this.localStorage.store("expiresAt", response.expiresAt);
+        })
+      );
+  }
+
+  getUserName() {
+    return this.localStorage.retrieve("username");
+  }
+  getRefreshToken() {
+    return this.localStorage.retrieve("refreshToken");
+  }
+
+  isLoggedIn(): boolean {
+    return this.getJwtToken() != null;
   }
 }

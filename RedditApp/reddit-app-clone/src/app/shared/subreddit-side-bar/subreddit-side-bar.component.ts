@@ -13,7 +13,7 @@ export class SubredditSideBarComponent implements OnInit {
 
   constructor(private subredditService: SubredditService) {
     this.subredditService.getAllSubreddits().subscribe((data) => {
-      if (data.length >= 4) {
+      if (data.length >= 2) {
         this.subreddits = data.splice(0, 3);
         this.displayViewAll = true;
       } else {
